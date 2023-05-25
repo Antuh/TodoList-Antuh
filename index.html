@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TodoList</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+    <h1>Список дел</h1>
+    <table id="data"></table>
+    
+  </body>
+</html>
+<form id="myForm">
+  <label class="my-input" for="todoInput">Задача:</label>
+  <input class="my-input" type="text" id="todoInput" name="todoInput"><br><br>
+  <select class="my-select" id="status" name="Статусы">
+    <option class="my-select" value="Выполнено">Выполнено</option>
+    <option class="my-select" value="Активно">Активно</option>
+  </select>
+  <button class="my-button" type="submit" id="submit">Добавить</button>
+</form>
+<script src="script.js"></script>
