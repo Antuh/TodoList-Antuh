@@ -12,32 +12,49 @@ function AddData() {
   let button = document.querySelector('#submit');
 
   button.addEventListener('click', function() {
-    let data = {
-      "text": input.value,
-      "status": "Активно",
-      "priority": "6",
-      "@metadata": {
-        "@collection": "task"
-      }
-    };
-
-    let randomId = generateRandomString(8);
-
-    fetch("http://localhost:8082/databases/TodoListDatabase/docs?id=" + randomId, {
-      method: 'PUT',
+    fetch('http://localhost:8082/databases/TodoListDatabase/queries', {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json;charset=UTF-8',
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({ Query: 'from task order by priority desc limit 1' }),
     })
-    .then(response => {
-      if (response.ok) {
-        console.log(response.responseText);
-      }
-    })
-    .catch(error => {
-      console.error(error);
-    });
+      .then(response => response.json())
+      .then(data => {
+        let priority = 1;
+        if(data.Results.length > 0) {
+          priority = parseInt(data.Results[0].priority) + 1;
+        }
+        let dataToAdd = {
+          "text": input.value,
+          "status": "Активно",
+          "priority": priority.toString(),
+          "@metadata": {
+            "@collection": "task"
+          }
+        };
+
+        let randomId = generateRandomString(8);
+
+        fetch("http://localhost:8082/databases/TodoListDatabase/docs?id=" + randomId, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+          },
+          body: JSON.stringify(dataToAdd)
+        })
+          .then(response => {
+            if (response.ok) {
+              console.log(response.responseText);
+            }
+          })
+          .catch(error => {
+            console.error(error);
+          });
+      })
+      .catch(error => {
+        console.error(error);
+      });
   });
 }
 
@@ -163,7 +180,17 @@ function fetchData(id) {
       query = 'from task where status = "Выполнено"';
     }
     else{
-      query = 'from task';
+      if(id === 'ascpriority-sort'){
+          query = 'from task order by priority asc';
+      }
+      else{
+          if(id === 'descpriority-sort'){
+              query = 'from task order by priority desc'
+          }
+          else{
+              query = 'from task';
+          }
+      }
     }
   }
 
@@ -229,6 +256,59 @@ function fetchData(id) {
     console.error(error);
   });
 }
+
+const exportJsonButton = document.getElementById('export-json');
+exportJsonButton.addEventListener('click', exportToJson);
+const exportTsvButton = document.getElementById('export-tsv');
+exportTsvButton.addEventListener('click', exportToTsv);
+
+function exportToJson() {
+  const data = fetchDataResult();
+  const jsonData = JSON.stringify(data);
+  downloadFile(jsonData, 'todo-list.json', 'application/json');
+}
+
+function exportToTsv() {
+  const data = fetchDataResult();
+  const tsvData = convertToTsv(data);
+  downloadFile(tsvData, 'todo-list.tsv', 'text/tab-separated-values');
+}
+
+function fetchDataResult() {
+  const table = document.getElementById('data');
+  const data = [];
+
+  for (let i = 1; i < table.rows.length; i++) {
+    const task = {};
+    task.text = table.rows[i].cells[0].innerText;
+    task.priority = table.rows[i].cells[1].innerText;
+    task.status = table.rows[i].cells[2].innerText;
+    data.push(task);
+  }
+
+  return data;
+}
+
+function convertToTsv(data) {
+  const header = Object.keys(data[0]).join('\t');
+  const rows = data.map(task => Object.values(task).join('\t'));
+  return `${header}\n${rows.join('\n')}`;
+}
+
+function downloadFile(data, filename, type) {
+  const file = new Blob([data], { type });
+  const a = document.createElement('a');
+  const url = URL.createObjectURL(file);
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }, 0);
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   AddData();
   fetchData();

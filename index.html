@@ -11,13 +11,23 @@
     
   </body>
 </html>
+<p>
+  <label class="my-select" for="sort-select">Сортировка: </label>
+  <select class="my-select" id="sort-select" onchange="fetchData(this.value)">
+    <option class="my-select" value="">Все задачи</option>
+    <option class="my-select" value="active-sort">Активные задачи</option>
+    <option class="my-select" value="complete-sort">Выполненные задачи</option>
+    <option class="my-select" value="ascpriority-sort">По возрастанию</option>
+    <option class="my-select" value="descpriority-sort">По убыванию</option>
+  </select>
+</p>
 <form id="myForm">
   <label class="my-input" for="todoInput">Задача:</label>
   <input class="my-input" type="text" id="todoInput" name="todoInput"><br><br>
-  <select class="my-select" id="status" name="Статусы">
-    <option class="my-select" value="Выполнено">Выполнено</option>
-    <option class="my-select" value="Активно">Активно</option>
-  </select>
   <button class="my-button" type="submit" id="submit">Добавить</button>
 </form>
-<script src="script.js"></script>
+<p>
+  <button class="my-button" id="export-json">Экспорт в JSON</button>
+  <button class="my-button" id="export-tsv">Экспорт в TSV</button>
+</p>
+<script src="test.js"></script>
