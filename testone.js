@@ -12,32 +12,49 @@ function AddData() {
   let button = document.querySelector('#submit');
 
   button.addEventListener('click', function() {
-    let data = {
-      "text": input.value,
-      "status": "Активно",
-      "priority": "6",
-      "@metadata": {
-        "@collection": "task"
-      }
-    };
-
-    let randomId = generateRandomString(8);
-
-    fetch("http://localhost:8082/databases/TodoListDatabase/docs?id=" + randomId, {
-      method: 'PUT',
+    fetch('http://localhost:8082/databases/TodoListDatabase/queries', {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json;charset=UTF-8',
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({ Query: 'from task order by priority desc limit 1' }),
     })
-    .then(response => {
-      if (response.ok) {
-        console.log(response.responseText);
-      }
-    })
-    .catch(error => {
-      console.error(error);
-    });
+      .then(response => response.json())
+      .then(data => {
+        let priority = 1;
+        if(data.Results.length > 0) {
+          priority = parseInt(data.Results[0].priority) + 1;
+        }
+        let dataToAdd = {
+          "text": input.value,
+          "status": "Активно",
+          "priority": priority.toString(),
+          "@metadata": {
+            "@collection": "task"
+          }
+        };
+
+        let randomId = generateRandomString(8);
+
+        fetch("http://localhost:8082/databases/TodoListDatabase/docs?id=" + randomId, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+          },
+          body: JSON.stringify(dataToAdd)
+        })
+          .then(response => {
+            if (response.ok) {
+              console.log(response.responseText);
+            }
+          })
+          .catch(error => {
+            console.error(error);
+          });
+      })
+      .catch(error => {
+        console.error(error);
+      });
   });
 }
 
@@ -84,12 +101,12 @@ function changeTask(id) {
       document.body.appendChild(modal);
 
       const titleInput = document.createElement('input');
-      titleInput.value = data.text;
+      titleInput.value = data.text ? data.text : ''; 
       modalContent.appendChild(document.createTextNode('Наименование: '));
       modalContent.appendChild(titleInput);
       modalContent.appendChild(document.createElement('br'));
 
-      const priorityInput = document.createElement('select');
+      /*const priorityInput = document.createElement('select');
       priorityInput.innerHTML = `
         <option value="6" ${data.priority === '1' ? 'selected' : ''}>Высокий</option>
         <option value="5" ${data.priority === '2' ? 'selected' : ''}>Средний</option>
@@ -97,7 +114,20 @@ function changeTask(id) {
       `;
       modalContent.appendChild(document.createTextNode('Приоритет: '));
       modalContent.appendChild(priorityInput);
+      modalContent.appendChild(document.createElement('br'));*/
+
+      const priorityInput = document.createElement('input');
+      priorityInput.type = 'number'; 
+      priorityInput.value = data.priority ? data.priority : ''; 
+      modalContent.appendChild(document.createTextNode('Приоритет: '));
+      modalContent.appendChild(priorityInput);
       modalContent.appendChild(document.createElement('br'));
+
+      priorityInput.addEventListener('keydown', (event) => {
+        if (!/^\d*$/.test(event.key)) { 
+          event.preventDefault(); 
+        }
+      });
 
       const statusInput = document.createElement('select');
       statusInput.innerHTML = `
@@ -163,7 +193,17 @@ function fetchData(id) {
       query = 'from task where status = "Выполнено"';
     }
     else{
-      query = 'from task';
+      if(id === 'ascpriority-sort'){
+          query = 'from task order by priority asc';
+      }
+      else{
+          if(id === 'descpriority-sort'){
+              query = 'from task order by priority desc'
+          }
+          else{
+              query = 'from task';
+          }
+      }
     }
   }
 
@@ -230,57 +270,68 @@ function fetchData(id) {
   });
 }
 
-const exportJsonButton = document.getElementById('export-json');
-exportJsonButton.addEventListener('click', exportToJson);
-const exportTsvButton = document.getElementById('export-tsv');
-exportTsvButton.addEventListener('click', exportToTsv);
+  const exportButton = document.getElementById('export-json');
+  exportButton.addEventListener('click', () => {
+  const query = 'from task';
+  const filename = 'result.json';
 
-function exportToJson() {
-  const data = fetchDataResult();
-  const jsonData = JSON.stringify(data);
-  downloadFile(jsonData, 'todo-list.json', 'application/json');
-}
+  fetch('http://localhost:8082/databases/TodoListDatabase/queries', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json;charset=UTF-8' },
+    body: JSON.stringify({ Query: query }),
+  })
+    .then(response => response.json())
+    .then(data => {
+      const jsonData = JSON.stringify(data);
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      console.log(`Data exported successfully to ${filename}`);
+    })
+    .catch(error => {
+      console.error('Error exporting data:', error);
+    });
+});
+const importFileInput = document.getElementById('import-file-input');
+const importButton = document.getElementById('import-button');
+importButton.addEventListener('click', () => {
+  const file = importFileInput.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = event => {
+      const jsonData = event.target.result;
+      const data = JSON.parse(jsonData);
 
-function exportToTsv() {
-  const data = fetchDataResult();
-  const tsvData = convertToTsv(data);
-  downloadFile(tsvData, 'todo-list.tsv', 'text/tab-separated-values');
-}
+      const requestOptions = {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      };
+      
+      let randimportjsonid = generateRandomString(8)
 
-function fetchDataResult() {
-  const table = document.getElementById('data');
-  const data = [];
-
-  for (let i = 1; i < table.rows.length; i++) {
-    const task = {};
-    task.text = table.rows[i].cells[0].innerText;
-    task.priority = table.rows[i].cells[1].innerText;
-    task.status = table.rows[i].cells[2].innerText;
-    data.push(task);
+      const url = 'http://localhost:8082/databases/TodoListDatabase/docs?id='+ randimportjsonid;
+      fetch(url, requestOptions)
+        .then(response => {
+          if (response.ok) {
+            console.log('Data imported successfully');
+          } else {
+            console.error('Error importing data:', response.status);
+          }
+        })
+        .catch(error => {
+          console.error('Error importing data:', error);
+        });
+    };
+    reader.readAsText(file);
   }
-
-  return data;
-}
-
-function convertToTsv(data) {
-  const header = Object.keys(data[0]).join('\t');
-  const rows = data.map(task => Object.values(task).join('\t'));
-  return `${header}\n${rows.join('\n')}`;
-}
-
-function downloadFile(data, filename, type) {
-  const file = new Blob([data], { type });
-  const a = document.createElement('a');
-  const url = URL.createObjectURL(file);
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  }, 0);
-}
+});
 
 window.addEventListener('DOMContentLoaded', () => {
   AddData();

@@ -101,12 +101,12 @@ function changeTask(id) {
       document.body.appendChild(modal);
 
       const titleInput = document.createElement('input');
-      titleInput.value = data.text;
+      titleInput.value = data.text ? data.text : ''; 
       modalContent.appendChild(document.createTextNode('Наименование: '));
       modalContent.appendChild(titleInput);
       modalContent.appendChild(document.createElement('br'));
 
-      const priorityInput = document.createElement('select');
+      /*const priorityInput = document.createElement('select');
       priorityInput.innerHTML = `
         <option value="6" ${data.priority === '1' ? 'selected' : ''}>Высокий</option>
         <option value="5" ${data.priority === '2' ? 'selected' : ''}>Средний</option>
@@ -114,7 +114,20 @@ function changeTask(id) {
       `;
       modalContent.appendChild(document.createTextNode('Приоритет: '));
       modalContent.appendChild(priorityInput);
+      modalContent.appendChild(document.createElement('br'));*/
+
+      const priorityInput = document.createElement('input');
+      priorityInput.type = 'number'; 
+      priorityInput.value = data.priority ? data.priority : ''; 
+      modalContent.appendChild(document.createTextNode('Приоритет: '));
+      modalContent.appendChild(priorityInput);
       modalContent.appendChild(document.createElement('br'));
+
+      priorityInput.addEventListener('keydown', (event) => {
+        if (!/^\d*$/.test(event.key)) { 
+          event.preventDefault(); 
+        }
+      });
 
       const statusInput = document.createElement('select');
       statusInput.innerHTML = `
