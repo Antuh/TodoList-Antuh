@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Список задач</title>
+  <style>
+    /* ваш стиль здесь */
+  </style>
+</head>
+
+<body>
+  <h1>Список задач</h1>
+  <form>
+    <label for="text-input">Название задачи:</label>
+    <input type="text" id="text-input">
+    <label for="priority-input">Приоритет:</label>
+    <select id="priority-input">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
+    <label for="status-input">Статус:</label>
+    <select id="status-input">
+      <option value="Активно">Активно</option>
+      <option value="Выполнено">Выполнено</option>
+    </select>
+    <button type="button" id="submit">Добавить задачу</button>
+  </form>
+  <br>
+  <h2>Сортировка:</h2>
+  <form>
+    <label for="sortby">Сортировка по:</label>
+    <select id="sortby">
+      <option value="all">Не сортировать</option>
+      <option value="active-sort">Активным задачам</option>
+      <option value="complete-sort">Выполненным задачам</option>
+      <option value="ascpriority-sort">Приоритету (по возрастанию)</option>
+      <option value="descpriority-sort">Приоритету (по убыванию)</option>
+      <option value="asclexorank-sort">Лексографическому рангу (по возрастанию)</option>
+      <option value="desclexorank-sort">Лексографическому рангу (по убыванию)</option>
+    </select>
+    <button type="button" id="sort">Сортировать</button>
+  </form>
+  <br>
+  <table id="data">
+  </table>
+  <script src="lexorank.js"></script>
+</body>
+
+</html>
